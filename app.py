@@ -20,22 +20,24 @@ import json
 # --------------------------
 # Simple Authentication
 # --------------------------
+# -------------------------
+# Admin login helper (using secrets)
+# -------------------------
 def admin_login():
-    st.sidebar.subheader("🔐 Admin Login")
-    username = st.sidebar.text_input("Username")
-    password = st.sidebar.text_input("Password", type="password")
+    st.subheader("Admin Login")
 
-        # Fetch credentials from secrets
+    username_input = st.text_input("Username")
+    password_input = st.text_input("Password", type="password")
+
+    # Fetch credentials from secrets
     admin_user = st.secrets["admin"]["username"]
     admin_pass = st.secrets["admin"]["password"]
 
-
-    # hard-coded credentials (change later to secrets or env variables)
-    if st.sidebar.button("Login"):
-        if username == admin_user and password == admin_pass:   # 👈 change as needed
+    if st.button("Login"):
+        if username_input == admin_user and password_input == admin_pass:
             st.session_state["admin_authenticated"] = True
-            st.success("✅ Logged in as Admin")
-            st.rerun()  # 🔥 force page refresh so admin options appear immediately
+            st.success("✅ Logged in as admin")
+            st.rerun()
         else:
             st.error("❌ Invalid username or password")
 
