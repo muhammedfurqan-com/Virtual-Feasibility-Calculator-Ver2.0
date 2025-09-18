@@ -224,15 +224,14 @@ if page == "Admin":
         st.markdown("---")
 
         # Config: feasible distance and suffix for backend conflict
-st.subheader("Settings")
-new_feasible = st.number_input(
-    "Feasible distance (km)",
-    min_value=1,  # start at 1 km instead of 0.1
-    value=int(cfg.get("feasible_km", 20)),  # use int instead of float
-    step=1  # ensures whole-number increments
-)
-
-        new_suffix = st.text_input(
+        st.subheader("Settings")
+        new_feasible = st.number_input(
+        "Feasible distance (km)",
+        min_value=1,  # start at 1 km instead of 0.1
+        value=int(cfg.get("feasible_km", 20)),  # use int instead of float
+        step=1  # ensures whole-number increments
+        )
+new_suffix = st.text_input(
             "Suffix to add to backend columns that conflict with input names",
             value=cfg.get("backend_conflict_suffix", "_matched")
         )
