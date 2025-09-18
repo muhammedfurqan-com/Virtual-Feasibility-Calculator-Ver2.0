@@ -34,7 +34,7 @@ def admin_login():
     #admin_user = st.secrets["admin"]["username"]
     #admin_pass = st.secrets["admin"]["password"]
 
-    if st.button("Login"):
+    if st.sidebar.button("Login"):
         if username_input == "admin" and password_input == "1234":
             st.session_state["admin_authenticated"] = True
             st.success("✅ Logged in as admin")
