@@ -27,8 +27,8 @@ import json
 def admin_login():
     st.subheader("Admin Login")
 
-    username_input = st.text_input("Username")
-    password_input = st.text_input("Password", type="password")
+    username_input = st.sidebar.text_input("Username")
+    password_input = st.sidebar.text_input("Password", type="password")
 
     # Fetch credentials from secrets
     #admin_user = st.secrets["admin"]["username"]
