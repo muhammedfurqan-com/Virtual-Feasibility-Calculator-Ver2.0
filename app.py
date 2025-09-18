@@ -31,11 +31,11 @@ def admin_login():
     password_input = st.text_input("Password", type="password")
 
     # Fetch credentials from secrets
-    admin_user = st.secrets["admin"]["username"]
-    admin_pass = st.secrets["admin"]["password"]
+    #admin_user = st.secrets["admin"]["username"]
+    #admin_pass = st.secrets["admin"]["password"]
 
     if st.button("Login"):
-        if username_input == admin_user and password_input == admin_pass:
+        if username_input == "admin" and password_input == "1234":
             st.session_state["admin_authenticated"] = True
             st.success("✅ Logged in as admin")
             st.rerun()
