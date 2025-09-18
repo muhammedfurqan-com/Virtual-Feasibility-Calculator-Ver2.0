@@ -17,7 +17,7 @@ from io import StringIO
 import os
 import json
 
-st.write("DEBUG - Secrets available:", dict(st.secrets))
+#st.write("DEBUG - Secrets available:", dict(st.secrets))
 # --------------------------
 # Simple Authentication
 # --------------------------
