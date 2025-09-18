@@ -228,7 +228,9 @@ if page == "Admin":
         new_feasible = st.number_input(
             "Feasible distance (km)",
             min_value=0.1,
-            value=float(cfg.get("feasible_km", 20.0))
+            #value=float(cfg.get("feasible_km", 20.0))
+        value=int(cfg.get("feasible_km", 20)),  # use int instead of float
+        step=1  # ensures whole-number increments
         )
         new_suffix = st.text_input(
             "Suffix to add to backend columns that conflict with input names",
