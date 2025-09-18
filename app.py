@@ -231,9 +231,9 @@ if page == "Admin":
         value=int(cfg.get("feasible_km", 20)),  # use int instead of float
         step=1  # ensures whole-number increments
         )
-new_suffix = st.text_input(
-            "Suffix to add to backend columns that conflict with input names",
-            value=cfg.get("backend_conflict_suffix", "_matched")
+        new_suffix = st.text_input(
+        "Suffix to add to backend columns that conflict with input names",
+        value=cfg.get("backend_conflict_suffix", "_matched")
         )
         if st.button("Save settings"):
             cfg["feasible_km"] = float(new_feasible)
