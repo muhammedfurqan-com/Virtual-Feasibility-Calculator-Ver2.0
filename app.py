@@ -251,19 +251,6 @@ if page == "Admin":
 # -------------------------
 elif page == "App":
     st.header("User — Upload or Paste input & find nearest backend site")
-
-
-    # Load backend
-    #if not os.path.exists(BACKEND_FILE):
-     #   st.warning("No backend_data.csv found. Ask Admin to upload backend data.")
-      #  st.stop()
-
-    #try:
-     #   backend_df = safe_read_table(BACKEND_FILE, filename=BACKEND_FILE)
-      #  backend_df = normalize_latlon_names(backend_df)
-    #except Exception as e:
-     #   st.error(f"Failed to load backend: {e}")
-      #  st.stop()
             # Load backend (prefer session_state if admin uploaded one)
         if "backend_df" in st.session_state and not st.session_state["backend_df"].empty:
             backend_df = st.session_state["backend_df"]
@@ -279,6 +266,20 @@ elif page == "App":
                 st.error(f"Failed to load backend: {e}")
                 st.stop()
 
+
+
+    # Load backend
+    #if not os.path.exists(BACKEND_FILE):
+     #   st.warning("No backend_data.csv found. Ask Admin to upload backend data.")
+      #  st.stop()
+
+    #try:
+     #   backend_df = safe_read_table(BACKEND_FILE, filename=BACKEND_FILE)
+      #  backend_df = normalize_latlon_names(backend_df)
+    #except Exception as e:
+     #   st.error(f"Failed to load backend: {e}")
+      #  st.stop()
+        
         st.write(f"✅ Loaded {len(backend_df)} backend rows.")   
     # Show backend summary
 
