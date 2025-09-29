@@ -279,7 +279,7 @@ else:
         st.error(f"Failed to load backend: {e}")
         st.stop()
 
-        
+     st.write(f"✅ Loaded {len(backend_df)} backend rows.")   
     # Show backend summary
     st.write(f"**Backend rows:** {len(backend_df)}")
 
