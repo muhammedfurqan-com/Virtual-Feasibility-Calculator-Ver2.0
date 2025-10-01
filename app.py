@@ -598,6 +598,7 @@ with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
     ws = writer.sheets["Results"]
 
     # --- Write grouped headers manually ---
+        # --- Write grouped headers manually ---
     col_idx = 1
     for group_name, cols in [
         ("Input Data", input_cols),
@@ -605,8 +606,8 @@ with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
         ("Backend Data", backend_cols),
     ]:
         for col in cols:
-            ws.cell(row=1, column=col_idx, value=group_name)  # Group header
-            ws.cell(row=2, column=col_idx, value=col)          # Sub header
+            ws.cell(row=1, column=col_idx, value=str(group_name))  # Group header
+            ws.cell(row=2, column=col_idx, value=str(col))         # Sub header
             col_idx += 1
 
     # --- Merge group header cells ---
