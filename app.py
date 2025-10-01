@@ -550,34 +550,43 @@ elif page == "App":
             #mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 #)
 # --- Build grouped headers ---
-# Define which columns belong to which section
-input_cols = ["Site ID", "Address"]   # <- replace with your actual input column names
-calc_cols = ["Feasible", "Distance km", "Distance miles"]  # <- replace with your calculated columns
-backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+if not final.empty:
+    # --- Detect column groups dynamically ---
 
-# Create MultiIndex for headers
-columns = []
-for c in final.columns:
+    # Example: if you stored the uploaded user input dataframe in st.session_state
+    input_df = st.session_state.get("input_df")
+    input_cols = list(input_df.columns) if input_df is not None else []
+
+    # Detect calculated columns (columns added by your logic)
+    calc_cols = [c for c in ["Feasible", "Distance km", "Distance miles"] if c in final.columns]
+
+    # Everything else = backend data
+    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+
+    # --- Build MultiIndex for grouped headers ---
+    columns = []
+    for c in final.columns:
         if c in input_cols:
-                columns.append(("Input Data", c))
+            columns.append(("Input Data", c))
         elif c in calc_cols:
-                columns.append(("Calculated", c))
+            columns.append(("Calculated", c))
         else:
-                columns.append(("Backend Data", c))
+            columns.append(("Backend Data", c))
 
-        final.columns = pd.MultiIndex.from_tuples(columns)
+    final.columns = pd.MultiIndex.from_tuples(columns)
 
-# --- Write Excel with grouped headers ---
-        excel_buffer = io.BytesIO()
-        with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-            final.to_excel(writer, index=False, sheet_name="Results")
+    # --- Write Excel with grouped headers ---
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        final.to_excel(writer, index=False, sheet_name="Results")
 
-        st.download_button(
-            "Download results Excel",
-            data=excel_buffer.getvalue(),
-            file_name="nearest_results.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
-
+    st.download_button(
+        "Download results Excel",
+        data=excel_buffer.getvalue(),
+        file_name="nearest_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+else:
+    st.warning("⚠️ No results to download yet.")
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
