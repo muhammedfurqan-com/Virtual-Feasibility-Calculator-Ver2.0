@@ -601,7 +601,13 @@ if "final" in locals() and not final.empty:   # ✅ Fixes NameError
     excel_buffer = io.BytesIO()
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
         # Write dataframe without headers, start from row 3
-        final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=3)
+       # Write only the raw values (no headers) manually
+ws = writer.book.create_sheet("Results") if "Results" not in writer.book.sheetnames else writer.sheets["Results"]
+
+for r_idx, row in enumerate(final.itertuples(index=False), start=4):  # start from row 4
+    for c_idx, value in enumerate(row, start=1):
+        ws.cell(row=r_idx, column=c_idx, value=value)
+
 
         ws = writer.sheets["Results"]
 
