@@ -579,27 +579,26 @@ if not final.empty:
     excel_buffer = io.BytesIO()
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
         # Write DataFrame without headers first
-final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=1)
+        final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=1)
 
-# Access the sheet
-ws = writer.sheets["Results"]
+        # Access the sheet
+        ws = writer.sheets["Results"]
 
-# Write grouped headers manually
-for col_idx, col_name in enumerate(final.columns, 1):
-    if isinstance(col_name, tuple):  # MultiIndex column
-        ws.cell(row=1, column=col_idx, value=col_name[0])  # Group header
-        ws.cell(row=2, column=col_idx, value=col_name[1])  # Sub header
-    else:
-        ws.cell(row=1, column=col_idx, value=col_name)     # Single header
+        # Write grouped headers manually
+        for col_idx, col_name in enumerate(final.columns, 1):
+            if isinstance(col_name, tuple):  # MultiIndex column
+                ws.cell(row=1, column=col_idx, value=col_name[0])  # Group header
+                ws.cell(row=2, column=col_idx, value=col_name[1])  # Sub header
+            else:
+                ws.cell(row=1, column=col_idx, value=col_name)     # Single header
 
-
-    st.download_button(
-        "Download results Excel",
-        data=excel_buffer.getvalue(),
-        file_name="nearest_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-else:
-    st.warning("⚠️ No results to download yet.")
+            st.download_button(
+                "Download results Excel",
+                data=excel_buffer.getvalue(),
+                file_name="nearest_results.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        else:
+            st.warning("⚠️ No results to download yet.")
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
