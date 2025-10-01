@@ -530,7 +530,7 @@ elif page == "App":
 
         st.dataframe(final.head(200), use_container_width=True)
 
-)
+#)
         #import io
 
         # Flatten multi-index columns if they exist (to avoid Excel error)
