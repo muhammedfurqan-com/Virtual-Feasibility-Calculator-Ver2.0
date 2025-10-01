@@ -559,11 +559,11 @@ backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 columns = []
 for c in final.columns:
         if c in input_cols:
-        columns.append(("Input Data", c))
+                columns.append(("Input Data", c))
         elif c in calc_cols:
-        columns.append(("Calculated", c))
+                columns.append(("Calculated", c))
         else:
-        columns.append(("Backend Data", c))
+                columns.append(("Backend Data", c))
 
         final.columns = pd.MultiIndex.from_tuples(columns)
 
