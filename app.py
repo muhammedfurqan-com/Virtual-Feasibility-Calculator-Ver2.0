@@ -594,11 +594,11 @@ if "final" in locals() and not final.empty:
 
 
 #)
-        import io
+import io
 
         # Flatten multi-index columns if they exist (to avoid Excel error)
-        if isinstance(final.columns, pd.MultiIndex):
-            final.columns = ['_'.join(map(str, col)).strip() for col in final.columns]
+if isinstance(final.columns, pd.MultiIndex):
+        final.columns = ['_'.join(map(str, col)).strip() for col in final.columns]
 
         # Convert DataFrame to Excel bytes
         #excel_buffer = io.BytesIO()
