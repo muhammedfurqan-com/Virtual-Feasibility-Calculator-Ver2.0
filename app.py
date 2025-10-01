@@ -500,62 +500,83 @@ if st.button("Run matching"):
     all_cols = input_cols + calc_cols + backend_cols
     final = final[all_cols]
 
-    st.success("Matching completed.")
-    st.subheader("Results (first 200 rows)")
-    st.dataframe(final.head(200), width='stretch')
+    #st.success("Matching completed.")
+    #st.subheader("Results (first 200 rows)")
+    #st.dataframe(final.head(200), width='stretch')
+import io
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
 
-    # -------------------------
-    # Excel export with grouped headers
-    # -------------------------
-    import io
-    from openpyxl import Workbook
-    from openpyxl.styles import Alignment, Font, PatternFill
+st.success("Matching completed.")
+st.subheader("Results (first 200 rows)")
 
-    excel_buffer = io.BytesIO()
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Results"
+# --- Define column groups ---
+input_cols = list(user_df.columns)
+calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+all_cols = input_cols + calc_cols + backend_cols
 
-    # Write subheaders (row 3)
-    for col_idx, col in enumerate(all_cols, start=1):
-        ws.cell(row=3, column=col_idx, value=col)
+# --- Create MultiIndex for Streamlit preview (superheaders) ---
+display_cols = []
+for c in all_cols:
+    if c in input_cols:
+        display_cols.append(("Input Data", c))
+    elif c in calc_cols:
+        display_cols.append(("Calculated Columns", c))
+    else:
+        display_cols.append(("Backend Data", c))
 
-    # Write superheaders (row 2)
-    current_col = 1
-    for segment_name, segment_cols in [("Input Data", input_cols),
-                                       ("Calculated Columns", calc_cols),
-                                       ("Backend Data", backend_cols)]:
-        if segment_cols:
-            start_col = current_col
-            end_col = current_col + len(segment_cols) - 1
-            ws.merge_cells(start_row=2, start_column=start_col,
-                           end_row=2, end_column=end_col)
-            ws.cell(row=2, column=start_col, value=segment_name)
-            current_col += len(segment_cols)
+final_display = final.copy()
+final_display = final_display[all_cols]  # enforce order
+final_display.columns = pd.MultiIndex.from_tuples(display_cols)
 
-    # Write data starting from row 4
-    for r_idx, row in enumerate(final[all_cols].values, start=4):
-        for c_idx, value in enumerate(row, start=1):
-            ws.cell(row=r_idx, column=c_idx, value=value)
+# Streamlit preview with superheaders
+st.dataframe(final_display.head(200), width='stretch')
 
-    # Style headers
-    for col_idx in range(1, len(all_cols)+1):
-        cell = ws.cell(row=2, column=col_idx)
-        cell.font = Font(bold=True, color="FFFFFF")
-        cell.alignment = Alignment(horizontal="center", vertical="center")
-        cell.fill = PatternFill("solid", fgColor="4F81BD")
-        sub_cell = ws.cell(row=3, column=col_idx)
+# --- Excel export with grouped headers ---
+excel_buffer = io.BytesIO()
+wb = Workbook()
+ws = wb.active
+ws.title = "Results"
+
+# --- Write superheaders (row 1) and subheaders (row 2) ---
+current_col = 1
+for group_name, cols in [("Input Data", input_cols),
+                         ("Calculated Columns", calc_cols),
+                         ("Backend Data", backend_cols)]:
+    start_col = current_col
+    end_col = start_col + len(cols) - 1
+    # Merge superheader cells
+    if len(cols) > 1:
+        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+    cell = ws.cell(row=1, column=start_col, value=group_name)
+    cell.font = Font(bold=True, color="FFFFFF")
+    cell.fill = PatternFill("solid", fgColor="4F81BD")
+    cell.alignment = Alignment(horizontal="center", vertical="center")
+    # Subheaders (row 2)
+    for i, col in enumerate(cols, start=start_col):
+        sub_cell = ws.cell(row=2, column=i, value=col)
         sub_cell.font = Font(bold=True)
-        sub_cell.alignment = Alignment(horizontal="center", vertical="center")
         sub_cell.fill = PatternFill("solid", fgColor="D9E1F2")
+        sub_cell.alignment = Alignment(horizontal="center", vertical="center")
+    current_col += len(cols)
 
-    excel_buffer.seek(0)
-    st.download_button(
-        "Download results Excel",
-        data=excel_buffer.getvalue(),
-        file_name="nearest_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+# --- Write data starting row 3 ---
+for r_idx, row in enumerate(final[all_cols].itertuples(index=False), start=3):
+    for c_idx, value in enumerate(row, start=1):
+        ws.cell(row=r_idx, column=c_idx, value=value)
+
+# --- Save workbook to buffer ---
+wb.save(excel_buffer)
+excel_buffer.seek(0)
+
+# --- Download button ---
+st.download_button(
+    "Download results Excel",
+    data=excel_buffer.getvalue(),
+    file_name="nearest_results.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
