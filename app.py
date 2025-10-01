@@ -628,6 +628,14 @@ if "final" in locals() and not final.empty:   # ✅ Fixes NameError
 
             # Merge super header cells (row=2)
             ws.merge_cells(
+                if len(segment_cols) > 0:
+                    start_col = current_col
+                    end_col = current_col + len(segment_cols) - 1
+            ws.merge_cells(start_row=2, start_column=start_col,
+                   end_row=2, end_column=end_col)
+    ws.cell(row=2, column=start_col, value=segment_name)
+    current_col += len(segment_cols)
+
                 start_row=2, start_column=start_col,
                 end_row=2, end_column=end_col
             )
