@@ -497,13 +497,13 @@ elif page == "App":
             final["Distance_miles"] = pd.to_numeric(final["Distance_miles"], errors="coerce").round(3)
 
             # --- Reorder columns ---
-    input_cols = list(user_df_fixed.columns)
-    calc_cols = ["Feasible", "Distance_km", "Distance_miles", "Nth_used"]
-    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+        input_cols = list(user_df_fixed.columns)
+        calc_cols = ["Feasible", "Distance_km", "Distance_miles", "Nth_used"]
+        backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 
             # Apply new order
-    new_order = input_cols + calc_cols + backend_cols
-    final = final[new_order]
+        new_order = input_cols + calc_cols + backend_cols
+        final = final[new_order]
                 
 
         st.success("Matching completed.")
