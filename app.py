@@ -596,45 +596,58 @@ flat_df.columns = (
 #with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
  #   flat_df.to_excel(writer, index=False, sheet_name="Results", startrow=2)  # leave 2 rows for grouped headers
   #  ws = writer.sheets["Results"]
-import io
-import pandas as pd
-from openpyxl.styles import Font, Alignment, PatternFill
-
-# ✅ Only run Excel export if "final" exists and is not empty
-if "final" in locals() and not final.empty:
+# --- Excel Export with Grouped Headers ---
+if "final" in locals() and not final.empty:   # ✅ Fixes NameError
     excel_buffer = io.BytesIO()
     with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        # Write data but skip default header (we’ll insert custom ones)
-        final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=2)
+        # Write dataframe without headers, start from row 3
+        final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=3)
 
         ws = writer.sheets["Results"]
 
-        # --- Define your groups ---
-        input_cols = ["col1", "col2"]  # replace with your actual input cols
-        calc_cols = ["feasible", "list_km", "list_miles"]  # your calculated cols
-        backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-
-        # --- Style setup ---
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
-        align_center = Alignment(horizontal="center", vertical="center")
-
-        # --- Write grouped headers with merged cells ---
-        col_idx = 1
-        for group_name, cols in [
+        # Define your column groups
+        col_groups = [
             ("Input Data", input_cols),
             ("Calculated Columns", calc_cols),
             ("Backend Data", backend_cols),
-        ]:
+        ]
+
+        # --- Write grouped headers ---
+        col_idx = 1
+        for group_name, cols in col_groups:
             start_col = col_idx
             for col in cols:
-                ws.cell(row=2, column=col_idx, value=str(col))  # sub header row
-                # style for sub headers
-                ws.cell(row=2, column=col_idx).font = header_font
-                ws.cell(row=2, column=col_idx).fill = header_fill
-                ws.cell(row=2, column=col_idx).alignment = align_center
+                ws.cell(row=3, column=col_idx, value=str(col))  # Sub header row
                 col_idx += 1
             end_col = col_idx - 1
+
+            # Merge super header cells (row=2)
+            ws.merge_cells(
+                start_row=2, start_column=start_col,
+                end_row=2, end_column=end_col
+            )
+            header_cell = ws.cell(row=2, column=start_col, value=group_name)
+
+            # --- Style super headers ---
+            header_cell.font = Font(bold=True, color="FFFFFF")
+            header_cell.alignment = Alignment(horizontal="center", vertical="center")
+            header_cell.fill = PatternFill("solid", fgColor="4F81BD")  # blue background
+
+        # Style sub headers (row=3)
+        for col_num, col_name in enumerate(final.columns, start=1):
+            cell = ws.cell(row=3, column=col_num)
+            cell.font = Font(bold=True)
+            cell.alignment = Alignment(horizontal="center", vertical="center")
+            cell.fill = PatternFill("solid", fgColor="D9E1F2")  # light blue
+            cell.value = str(col_name)
+
+    st.download_button(
+        "Download results Excel",
+        data=excel_buffer.getvalue(),
+        file_name="nearest_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
             # merge super header row
             ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
