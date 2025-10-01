@@ -16,6 +16,10 @@ import math
 from io import StringIO
 import os
 import json
+from openpyxl import load_workbook
+from openpyxl.styles import Alignment, Font
+from openpyxl.utils import get_column_letter
+
 
 #st.write("DEBUG - Secrets available:", dict(st.secrets))
 # --------------------------
@@ -526,8 +530,12 @@ elif page == "App":
 
         st.dataframe(final.head(200), use_container_width=True)
 
-        # Download button
+)
         import io
+
+        # Flatten multi-index columns if they exist (to avoid Excel error)
+        if isinstance(final.columns, pd.MultiIndex):
+            final.columns = ['_'.join(map(str, col)).strip() for col in final.columns]
 
         # Convert DataFrame to Excel bytes
         excel_buffer = io.BytesIO()
