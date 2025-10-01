@@ -553,7 +553,7 @@ if "final" in st.session_state:
 else:
     final = None
 
-all_cols = input_cols + calc_cols + backend_cols
+#all_cols = input_cols + calc_cols + backend_cols
 
 # --- Create MultiIndex for Streamlit preview (superheaders) ---
 display_cols = []
