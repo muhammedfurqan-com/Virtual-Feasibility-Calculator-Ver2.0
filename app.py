@@ -665,15 +665,15 @@ if "final" in locals() and not final.empty:
        #     col_idx += 1
 
     # --- Merge group header cells ---
-   # start = 1
-    #for cols in [input_cols, calc_cols, backend_cols]:
-     #   if cols:
-      #      end = start + len(cols) - 1
-       #     if end > start:
-        #        ws.merge_cells(
-         #           start_row=1, start_column=start, end_row=1, end_column=end
-          #      )
-           # start = end + 1
+    start = 1
+    for cols in [input_cols, calc_cols, backend_cols]:
+        if cols:
+            end = start + len(cols) - 1
+            if end > start:
+                ws.merge_cells(
+                    start_row=1, start_column=start, end_row=1, end_column=end
+                )
+            start = end + 1
 
 # --- Download button ---
 excel_buffer.seek(0)
