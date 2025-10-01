@@ -527,5 +527,20 @@ elif page == "App":
         st.dataframe(final.head(200), use_container_width=True)
 
         # Download button
-        csv_bytes = final.to_csv(index=False).encode("utf-8")
-        st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
+            #import io
+
+        # Convert DataFrame to Excel bytes
+        excel_buffer = io.BytesIO()
+        final.to_excel(excel_buffer, index=False, engine="openpyxl")
+        excel_buffer.seek(0)
+
+        # Download button
+        st.download_button(
+            "Download results Excel",
+            data=excel_buffer,
+            file_name="nearest_results.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+        #csv_bytes = final.to_csv(index=False).encode("utf-8")
+        #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
