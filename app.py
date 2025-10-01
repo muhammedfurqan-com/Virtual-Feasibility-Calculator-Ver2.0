@@ -576,29 +576,57 @@ if not final.empty:
     final.columns = pd.MultiIndex.from_tuples(columns)
 
     # --- Write Excel with grouped headers ---
-    excel_buffer = io.BytesIO()
-    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        # Write DataFrame without headers first
-        final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=1)
+    import io
+from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 
-        # Access the sheet
-        ws = writer.sheets["Results"]
+# --- Split columns into 3 sections ---
+input_cols = [c for c in final.columns if c in ["Input_Column1", "Input_Column2"]]  # update names as needed
+calc_cols = [c for c in final.columns if c in ["Feasible", "Distance_km", "Distance_miles"]]
+backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 
-        # Write grouped headers manually
-        for col_idx, col_name in enumerate(final.columns, 1):
-            if isinstance(col_name, tuple):  # MultiIndex column
-                ws.cell(row=1, column=col_idx, value=col_name[0])  # Group header
-                ws.cell(row=2, column=col_idx, value=col_name[1])  # Sub header
-            else:
-                ws.cell(row=1, column=col_idx, value=col_name)     # Single header
+# Create a flat copy of DataFrame (single row headers)
+flat_df = final.copy()
+flat_df.columns = (
+    input_cols + calc_cols + backend_cols
+)
 
-            st.download_button(
-                "Download results Excel",
-                data=excel_buffer.getvalue(),
-                file_name="nearest_results.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
-        else:
-            st.warning("⚠️ No results to download yet.")
+# --- Write to Excel ---
+excel_buffer = io.BytesIO()
+with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+    flat_df.to_excel(writer, index=False, sheet_name="Results", startrow=2)  # leave 2 rows for grouped headers
+    ws = writer.sheets["Results"]
+
+    # --- Write grouped headers manually ---
+    col_idx = 1
+    for group_name, cols in [
+        ("Input Data", input_cols),
+        ("Calculated Columns", calc_cols),
+        ("Backend Data", backend_cols),
+    ]:
+        for col in cols:
+            ws.cell(row=1, column=col_idx, value=group_name)  # Group header
+            ws.cell(row=2, column=col_idx, value=col)          # Sub header
+            col_idx += 1
+
+    # --- Merge group header cells ---
+    start = 1
+    for cols in [input_cols, calc_cols, backend_cols]:
+        if cols:
+            end = start + len(cols) - 1
+            if end > start:
+                ws.merge_cells(
+                    start_row=1, start_column=start, end_row=1, end_column=end
+                )
+            start = end + 1
+
+# --- Download button ---
+excel_buffer.seek(0)
+st.download_button(
+    "Download Results Excel",
+    data=excel_buffer,
+    file_name="nearest_results.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+)
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
