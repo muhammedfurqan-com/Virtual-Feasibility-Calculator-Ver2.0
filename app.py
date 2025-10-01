@@ -538,17 +538,46 @@ elif page == "App":
             final.columns = ['_'.join(map(str, col)).strip() for col in final.columns]
 
         # Convert DataFrame to Excel bytes
-        excel_buffer = io.BytesIO()
-        final.to_excel(excel_buffer, index=False, engine="openpyxl")
-        excel_buffer.seek(0)
+        #excel_buffer = io.BytesIO()
+        #final.to_excel(excel_buffer, index=False, engine="openpyxl")
+        #excel_buffer.seek(0)
 
         # Download button
+        #st.download_button(
+         #   "Download results Excel",
+          #  data=excel_buffer,
+           # file_name="nearest_results.xlsx",
+            #mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#)
+# --- Build grouped headers ---
+# Define which columns belong to which section
+input_cols = ["Site ID", "Address"]   # <- replace with your actual input column names
+calc_cols = ["Feasible", "Distance km", "Distance miles"]  # <- replace with your calculated columns
+backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+
+# Create MultiIndex for headers
+        columns = []
+        for c in final.columns:
+            if c in input_cols:
+                columns.append(("Input Data", c))
+            elif c in calc_cols:
+                columns.append(("Calculated", c))
+            else:
+                columns.append(("Backend Data", c))
+
+        final.columns = pd.MultiIndex.from_tuples(columns)
+
+# --- Write Excel with grouped headers ---
+        excel_buffer = io.BytesIO()
+        with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+            final.to_excel(writer, index=False, sheet_name="Results")
+
         st.download_button(
             "Download results Excel",
-            data=excel_buffer,
+            data=excel_buffer.getvalue(),
             file_name="nearest_results.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+        )
 
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
