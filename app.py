@@ -527,7 +527,7 @@ elif page == "App":
         st.dataframe(final.head(200), use_container_width=True)
 
         # Download button
-            #import io
+        import io
 
         # Convert DataFrame to Excel bytes
         excel_buffer = io.BytesIO()
