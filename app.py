@@ -510,7 +510,7 @@ if st.button("Run matching"):
     backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 else:
     final = None
-    all_cols = input_cols + calc_cols + backend_cols
+   # all_cols = input_cols + calc_cols + backend_cols
     # ✅ Use final from session_state safely
 if "final" in st.session_state and st.session_state["final"] is not None:
     final = st.session_state["final"]
