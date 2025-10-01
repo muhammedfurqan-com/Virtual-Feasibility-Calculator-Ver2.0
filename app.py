@@ -592,34 +592,88 @@ flat_df.columns = (
 )
 
 # --- Write to Excel ---
-excel_buffer = io.BytesIO()
-with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-    flat_df.to_excel(writer, index=False, sheet_name="Results", startrow=2)  # leave 2 rows for grouped headers
-    ws = writer.sheets["Results"]
+#excel_buffer = io.BytesIO()
+#with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+ #   flat_df.to_excel(writer, index=False, sheet_name="Results", startrow=2)  # leave 2 rows for grouped headers
+  #  ws = writer.sheets["Results"]
+import io
+import pandas as pd
+from openpyxl.styles import Font, Alignment, PatternFill
+
+# ✅ Only run Excel export if "final" exists and is not empty
+if "final" in locals() and not final.empty:
+    excel_buffer = io.BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        # Write data but skip default header (we’ll insert custom ones)
+        final.to_excel(writer, index=False, sheet_name="Results", header=False, startrow=2)
+
+        ws = writer.sheets["Results"]
+
+        # --- Define your groups ---
+        input_cols = ["col1", "col2"]  # replace with your actual input cols
+        calc_cols = ["feasible", "list_km", "list_miles"]  # your calculated cols
+        backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+
+        # --- Style setup ---
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="4F81BD", end_color="4F81BD", fill_type="solid")
+        align_center = Alignment(horizontal="center", vertical="center")
+
+        # --- Write grouped headers with merged cells ---
+        col_idx = 1
+        for group_name, cols in [
+            ("Input Data", input_cols),
+            ("Calculated Columns", calc_cols),
+            ("Backend Data", backend_cols),
+        ]:
+            start_col = col_idx
+            for col in cols:
+                ws.cell(row=2, column=col_idx, value=str(col))  # sub header row
+                # style for sub headers
+                ws.cell(row=2, column=col_idx).font = header_font
+                ws.cell(row=2, column=col_idx).fill = header_fill
+                ws.cell(row=2, column=col_idx).alignment = align_center
+                col_idx += 1
+            end_col = col_idx - 1
+
+            # merge super header row
+            ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+            cell = ws.cell(row=1, column=start_col, value=group_name)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = align_center
+
+    # ✅ Streamlit download button
+    st.download_button(
+        "Download results Excel",
+        data=excel_buffer.getvalue(),
+        file_name="nearest_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
     # --- Write grouped headers manually ---
         # --- Write grouped headers manually ---
-    col_idx = 1
-    for group_name, cols in [
-        ("Input Data", input_cols),
-        ("Calculated Columns", calc_cols),
-        ("Backend Data", backend_cols),
-    ]:
-        for col in cols:
-            ws.cell(row=1, column=col_idx, value=str(group_name))  # Group header
-            ws.cell(row=2, column=col_idx, value=str(col))         # Sub header
-            col_idx += 1
+#    col_idx = 1
+ #   for group_name, cols in [
+  #      ("Input Data", input_cols),
+   #     ("Calculated Columns", calc_cols),
+    #    ("Backend Data", backend_cols),
+   # ]:
+    #    for col in cols:
+     #       ws.cell(row=1, column=col_idx, value=str(group_name))  # Group header
+      #      ws.cell(row=2, column=col_idx, value=str(col))         # Sub header
+       #     col_idx += 1
 
     # --- Merge group header cells ---
-    start = 1
-    for cols in [input_cols, calc_cols, backend_cols]:
-        if cols:
-            end = start + len(cols) - 1
-            if end > start:
-                ws.merge_cells(
-                    start_row=1, start_column=start, end_row=1, end_column=end
-                )
-            start = end + 1
+   # start = 1
+    #for cols in [input_cols, calc_cols, backend_cols]:
+     #   if cols:
+      #      end = start + len(cols) - 1
+       #     if end > start:
+        #        ws.merge_cells(
+         #           start_row=1, start_column=start, end_row=1, end_column=end
+          #      )
+           # start = end + 1
 
 # --- Download button ---
 excel_buffer.seek(0)
