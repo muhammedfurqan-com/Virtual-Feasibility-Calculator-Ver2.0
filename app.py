@@ -556,14 +556,14 @@ calc_cols = ["Feasible", "Distance km", "Distance miles"]  # <- replace with you
 backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 
 # Create MultiIndex for headers
-        columns = []
-        for c in final.columns:
-            if c in input_cols:
-                columns.append(("Input Data", c))
-            elif c in calc_cols:
-                columns.append(("Calculated", c))
-            else:
-                columns.append(("Backend Data", c))
+columns = []
+for c in final.columns:
+        if c in input_cols:
+        columns.append(("Input Data", c))
+        elif c in calc_cols:
+        columns.append(("Calculated", c))
+        else:
+        columns.append(("Backend Data", c))
 
         final.columns = pd.MultiIndex.from_tuples(columns)
 
