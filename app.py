@@ -657,12 +657,12 @@ cell.fill = header_fill
 cell.alignment = align_center
 
     # ✅ Streamlit download button
-    st.download_button(
-        "Download results Excel",
-        data=excel_buffer.getvalue(),
-        file_name="nearest_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+st.download_button(
+"Download results Excel",
+data=excel_buffer.getvalue(),
+file_name="nearest_results.xlsx",
+mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
     # --- Write grouped headers manually ---
         # --- Write grouped headers manually ---
