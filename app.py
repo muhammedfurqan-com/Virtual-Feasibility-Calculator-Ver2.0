@@ -508,6 +508,22 @@ elif page == "App":
 
         st.success("Matching completed.")
         st.subheader("Results (first 200 rows)")
+            # --- Add super headers ---
+input_cols = list(user_df.columns)
+calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+
+new_cols = []
+for c in final.columns:
+    if c in input_cols:
+        new_cols.append(("Input Data", c))
+    elif c in calc_cols:
+        new_cols.append(("Calculated", c))
+    else:
+        new_cols.append(("Backend Data", c))
+
+final.columns = pd.MultiIndex.from_tuples(new_cols)
+
         st.dataframe(final.head(200), use_container_width=True)
 
         # Download button
