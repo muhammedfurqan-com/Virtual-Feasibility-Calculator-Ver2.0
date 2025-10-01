@@ -650,11 +650,11 @@ if "final" in locals() and not final.empty:   # ✅ Fixes NameError
 
 
             # merge super header row
-        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
-        cell = ws.cell(row=1, column=start_col, value=group_name)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = align_center
+ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+cell = ws.cell(row=1, column=start_col, value=group_name)
+cell.font = header_font
+cell.fill = header_fill
+cell.alignment = align_center
 
     # ✅ Streamlit download button
     st.download_button(
