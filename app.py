@@ -511,7 +511,24 @@ if st.button("Run matching"):
 else:
     final = None
     all_cols = input_cols + calc_cols + backend_cols
-    final = final[all_cols]
+    # ✅ Use final from session_state safely
+if "final" in st.session_state and st.session_state["final"] is not None:
+    final = st.session_state["final"]
+
+    # Rebuild column lists
+    input_cols = list(user_df.columns)
+    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+
+    all_cols = input_cols + calc_cols + backend_cols
+
+    # Preview results with super headers (if needed)
+    st.dataframe(final.head(200), width='stretch')
+
+    # Excel export code goes here (the full block I shared in last message)
+else:
+    st.info("Run matching first to generate results.")
+
 
     #st.success("Matching completed.")
     #st.subheader("Results (first 200 rows)")
