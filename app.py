@@ -491,12 +491,26 @@ if st.button("Run matching"):
         results_frames.append(combined)
 
     # Final results
+    # final results
     final = pd.concat(results_frames, ignore_index=True)
+
+# Store in session_state so it persists across reruns (prevents NameError)
+    st.session_state["final"] = final
+
 
     # Reorder columns
     input_cols = list(user_df_fixed.columns)
     calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+    # Use final from session_state if it exists
+    if "final" in st.session_state:
+        final = st.session_state["final"]
+
+    input_cols = list(user_df.columns)
+    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
     backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+else:
+    final = None
+
     all_cols = input_cols + calc_cols + backend_cols
     final = final[all_cols]
 
