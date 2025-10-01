@@ -553,52 +553,71 @@ final_display = final_display[all_cols]  # enforce order
 final_display.columns = pd.MultiIndex.from_tuples(display_cols)
 
 # Streamlit preview with superheaders
-st.dataframe(final_display.head(200), width='stretch')
+if final is not None:
+    st.dataframe(final.head(200), width='stretch')  # Streamlit 1.26+ change
+
 
 # --- Excel export with grouped headers ---
-excel_buffer = io.BytesIO()
-wb = Workbook()
-ws = wb.active
-ws.title = "Results"
+import io
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
 
-# --- Write superheaders (row 1) and subheaders (row 2) ---
-current_col = 1
-for group_name, cols in [("Input Data", input_cols),
-                         ("Calculated Columns", calc_cols),
-                         ("Backend Data", backend_cols)]:
-    start_col = current_col
-    end_col = start_col + len(cols) - 1
-    # Merge superheader cells
-    if len(cols) > 1:
-        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
-    cell = ws.cell(row=1, column=start_col, value=group_name)
-    cell.font = Font(bold=True, color="FFFFFF")
-    cell.fill = PatternFill("solid", fgColor="4F81BD")
-    cell.alignment = Alignment(horizontal="center", vertical="center")
-    # Subheaders (row 2)
-    for i, col in enumerate(cols, start=start_col):
-        sub_cell = ws.cell(row=2, column=i, value=col)
-        sub_cell.font = Font(bold=True)
-        sub_cell.fill = PatternFill("solid", fgColor="D9E1F2")
-        sub_cell.alignment = Alignment(horizontal="center", vertical="center")
-    current_col += len(cols)
+if final is not None:
+    excel_buffer = io.BytesIO()
 
-# --- Write data starting row 3 ---
-for r_idx, row in enumerate(final[all_cols].itertuples(index=False), start=3):
-    for c_idx, value in enumerate(row, start=1):
-        ws.cell(row=r_idx, column=c_idx, value=value)
+    # --- Create Excel writer and sheet ---
+    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
+        # Flatten multi-index columns if exist
+        flat_df = final.copy()
+        if isinstance(flat_df.columns, pd.MultiIndex):
+            flat_df.columns = ['_'.join(map(str, col)).strip() for col in flat_df.columns]
 
-# --- Save workbook to buffer ---
-wb.save(excel_buffer)
-excel_buffer.seek(0)
+        # Write raw values starting row=3 (reserve rows 1-2 for grouped headers)
+        ws = writer.book.create_sheet("Results") if "Results" not in writer.book.sheetnames else writer.sheets["Results"]
+        for r_idx, row in enumerate(flat_df.itertuples(index=False), start=4):
+            for c_idx, value in enumerate(row, start=1):
+                ws.cell(row=r_idx, column=c_idx, value=value)
 
-# --- Download button ---
-st.download_button(
-    "Download results Excel",
-    data=excel_buffer.getvalue(),
-    file_name="nearest_results.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
+        # --- Define column groups ---
+        input_cols = list(user_df.columns)
+        calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+        backend_cols = [c for c in flat_df.columns if c not in input_cols + calc_cols]
+
+        col_groups = [
+            ("Input Data", input_cols),
+            ("Calculated Columns", calc_cols),
+            ("Backend Data", backend_cols),
+        ]
+
+        # --- Write grouped headers ---
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill("solid", fgColor="4F81BD")
+        align_center = Alignment(horizontal="center", vertical="center")
+
+        current_col = 1
+        for group_name, segment_cols in col_groups:
+            start_col = current_col
+            end_col = current_col + len(segment_cols) - 1
+            ws.merge_cells(start_row=2, start_column=start_col, end_row=2, end_column=end_col)
+            ws.cell(row=2, column=start_col, value=group_name).font = header_font
+            ws.cell(row=2, column=start_col, value=group_name).alignment = align_center
+            ws.cell(row=2, column=start_col, value=group_name).fill = header_fill
+
+            # Write subheaders (row 3)
+            for i, col in enumerate(segment_cols):
+                cell = ws.cell(row=3, column=start_col + i, value=col)
+                cell.font = Font(bold=True)
+                cell.alignment = Alignment(horizontal="center", vertical="center")
+                cell.fill = PatternFill("solid", fgColor="D9E1F2")
+            current_col += len(segment_cols)
+
+    # ✅ Download button
+    st.download_button(
+        "Download results Excel",
+        data=excel_buffer.getvalue(),
+        file_name="nearest_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
