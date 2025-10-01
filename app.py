@@ -529,6 +529,69 @@ elif page == "App":
         final.columns = pd.MultiIndex.from_tuples(new_cols)
 
         st.dataframe(final.head(200), use_container_width=True)
+            import io
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+
+if "final" in locals() and not final.empty:
+    # --- Define column groups ---
+    input_cols = list(user_df_fixed.columns)
+    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+
+    all_cols = input_cols + calc_cols + backend_cols
+
+    # Create Excel workbook
+    excel_buffer = io.BytesIO()
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Results"
+
+    # Write subheaders (row 3)
+    for col_idx, col in enumerate(all_cols, start=1):
+        ws.cell(row=3, column=col_idx, value=col)
+
+    # Write superheaders (row 2)
+    current_col = 1
+    for segment_name, segment_cols in [("Input Data", input_cols),
+                                       ("Calculated Columns", calc_cols),
+                                       ("Backend Data", backend_cols)]:
+        if len(segment_cols) > 0:
+            start_col = current_col
+            end_col = current_col + len(segment_cols) - 1
+            ws.merge_cells(start_row=2, start_column=start_col,
+                           end_row=2, end_column=end_col)
+            ws.cell(row=2, column=start_col, value=segment_name)
+            current_col += len(segment_cols)
+
+    # Write data starting from row 4
+    for r_idx, row in enumerate(final[all_cols].values, start=4):
+        for c_idx, value in enumerate(row, start=1):
+            ws.cell(row=r_idx, column=c_idx, value=value)
+
+    # Style superheaders
+    for col_idx in range(1, len(all_cols)+1):
+        cell = ws.cell(row=2, column=col_idx)
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.fill = PatternFill("solid", fgColor="4F81BD")  # blue
+
+    # Style subheaders
+    for col_idx in range(1, len(all_cols)+1):
+        cell = ws.cell(row=3, column=col_idx)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+        cell.fill = PatternFill("solid", fgColor="D9E1F2")  # light blue
+
+    # Download button
+    excel_buffer.seek(0)
+    st.download_button(
+        "Download results Excel",
+        data=excel_buffer.getvalue(),
+        file_name="nearest_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
 
 #)
         import io
@@ -549,119 +612,6 @@ elif page == "App":
            # file_name="nearest_results.xlsx",
             #mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 #)
-# --- Build grouped headers ---
-if not final.empty:
-    # --- Detect column groups dynamically ---
-
-    # Example: if you stored the uploaded user input dataframe in st.session_state
-    input_df = st.session_state.get("input_df")
-    input_cols = list(input_df.columns) if input_df is not None else []
-
-    # Detect calculated columns (columns added by your logic)
-    calc_cols = [c for c in ["Feasible", "Distance km", "Distance miles"] if c in final.columns]
-
-    # Everything else = backend data
-    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-
-    # --- Build MultiIndex for grouped headers ---
-    columns = []
-    for c in final.columns:
-        if c in input_cols:
-            columns.append(("Input Data", c))
-        elif c in calc_cols:
-            columns.append(("Calculated", c))
-        else:
-            columns.append(("Backend Data", c))
-
-    final.columns = pd.MultiIndex.from_tuples(columns)
-
-    # --- Write Excel with grouped headers ---
-    import io
-from openpyxl import load_workbook
-from openpyxl.utils import get_column_letter
-
-# --- Split columns into 3 sections ---
-input_cols = [c for c in final.columns if c in ["Input_Column1", "Input_Column2"]]  # update names as needed
-calc_cols = [c for c in final.columns if c in ["Feasible", "Distance_km", "Distance_miles"]]
-backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-
-# Create a flat copy of DataFrame (single row headers)
-flat_df = final.copy()
-flat_df.columns = (
-    input_cols + calc_cols + backend_cols
-)
-
-# --- Write to Excel ---
-#excel_buffer = io.BytesIO()
-#with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
- #   flat_df.to_excel(writer, index=False, sheet_name="Results", startrow=2)  # leave 2 rows for grouped headers
-  #  ws = writer.sheets["Results"]
-# --- Excel Export with Grouped Headers ---
-if "final" in locals() and not final.empty:   # ✅ Fixes NameError
-    excel_buffer = io.BytesIO()
-    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        # Write dataframe without headers, start from row 3
-       # Write only the raw values (no headers) manually
-        ws = writer.book.create_sheet("Results") if "Results" not in writer.book.sheetnames else writer.sheets["Results"]
-
-        for r_idx, row in enumerate(final.itertuples(index=False), start=4):  # start from row 4
-            for c_idx, value in enumerate(row, start=1):
-                ws.cell(row=r_idx, column=c_idx, value=value)
-
-        ws = writer.sheets["Results"]
-
-        # Define your column groups
-        col_groups = [
-            ("Input Data", input_cols),
-            ("Calculated Columns", calc_cols),
-            ("Backend Data", backend_cols),
-        ]
-
-        # --- Write grouped headers ---
-        col_idx = 1
-        for group_name, cols in col_groups:
-            start_col = col_idx
-            for col in cols:
-                ws.cell(row=3, column=col_idx, value=str(col))  # Sub header row
-                col_idx += 1
-            end_col = col_idx - 1
-
-            # Merge super header cells (row=2)
-            ws.merge_cells(
-                if len(segment_cols) > 0:
-                    start_col = current_col
-                    end_col = current_col + len(segment_cols) - 1
-            ws.merge_cells(start_row=2, start_column=start_col,
-                   end_row=2, end_column=end_col)
-    ws.cell(row=2, column=start_col, value=segment_name)
-    current_col += len(segment_cols)
-
-                start_row=2, start_column=start_col,
-                end_row=2, end_column=end_col
-            )
-            header_cell = ws.cell(row=2, column=start_col, value=group_name)
-
-            # --- Style super headers ---
-            header_cell.font = Font(bold=True, color="FFFFFF")
-            header_cell.alignment = Alignment(horizontal="center", vertical="center")
-            header_cell.fill = PatternFill("solid", fgColor="4F81BD")  # blue background
-
-        # Style sub headers (row=3)
-        for col_num, col_name in enumerate(final.columns, start=1):
-            cell = ws.cell(row=3, column=col_num)
-            cell.font = Font(bold=True)
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-            cell.fill = PatternFill("solid", fgColor="D9E1F2")  # light blue
-            cell.value = str(col_name)
-
-    st.download_button(
-        "Download results Excel",
-        data=excel_buffer.getvalue(),
-        file_name="nearest_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-
             # merge super header row
 ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
 cell = ws.cell(row=1, column=start_col, value=group_name)
