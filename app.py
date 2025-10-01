@@ -678,8 +678,8 @@ mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
        #     col_idx += 1
 
     # --- Merge group header cells ---
-    start = 1
-    for cols in [input_cols, calc_cols, backend_cols]:
+start = 1
+for cols in [input_cols, calc_cols, backend_cols]:
         if cols:
             end = start + len(cols) - 1
             if end > start:
