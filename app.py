@@ -439,202 +439,171 @@ elif page == "App":
     if per_row_nth_col:
         st.info(f"Per-row Nth override detected in input column: {per_row_nth_col}")
 
-   # -------------------------
-# Run matching
-# -------------------------
-if st.button("Run matching"):
-    df_user = user_df_fixed.copy()
-    # ensure numeric lat/lon
-    df_user[user_lat_col] = pd.to_numeric(df_user[user_lat_col], errors="coerce")
-    df_user[user_lon_col] = pd.to_numeric(df_user[user_lon_col], errors="coerce")
-    df_user = df_user.dropna(subset=[user_lat_col, user_lon_col]).reset_index(drop=True)
-    if df_user.empty:
-        st.error("No valid input rows to process.")
-        st.stop()
+    # -------------------------
+    # Run matching
+    # -------------------------
+    if st.button("Run matching"):
+        # Run matching logic (same as before) - produces `final`
+        df_user = user_df_fixed.copy()
+        # ensure numeric lat/lon
+        df_user[user_lat_col] = pd.to_numeric(df_user[user_lat_col], errors="coerce")
+        df_user[user_lon_col] = pd.to_numeric(df_user[user_lon_col], errors="coerce")
+        df_user = df_user.dropna(subset=[user_lat_col, user_lon_col]).reset_index(drop=True)
+        if df_user.empty:
+            st.error("No valid input rows to process.")
+            st.stop()
 
-    results_frames = []
-    input_columns = list(df_user.columns)
+        results_frames = []
+        input_columns = list(df_user.columns)
 
-    for idx, row in df_user.iterrows():
-        lat_val = float(row[user_lat_col])
-        lon_val = float(row[user_lon_col])
+        for idx, row in df_user.iterrows():
+            lat_val = float(row[user_lat_col])
+            lon_val = float(row[user_lon_col])
 
-        # decide nth for this row
-        nth = global_nth
-        if per_row_nth_col:
-            try:
-                alt = int(pd.to_numeric(row[per_row_nth_col], errors="coerce"))
-                if not np.isnan(alt) and alt >= 1:
-                    nth = alt
-            except Exception:
-                pass
+            # decide nth for this row
+            nth = global_nth
+            if per_row_nth_col:
+                try:
+                    alt = int(pd.to_numeric(row[per_row_nth_col], errors="coerce"))
+                    if not np.isnan(alt) and alt >= 1:
+                        nth = alt
+                except Exception:
+                    pass
 
-        dists = vectorized_haversine(lat_val, lon_val, backend_lat_rad, backend_lon_rad)
-        j = find_nth_index(dists, n=int(nth))
-        if j is None:
-            empty_backend = {c: None for c in backend_filtered.columns}
-            empty_backend.update({"Distance_km": None, "Distance_miles": None, "Feasible": None})
-            backend_row = pd.Series(empty_backend)
-        else:
-            backend_row = backend_filtered.iloc[int(j)].copy()
-            dist_km = float(dists[j])
-            backend_row["Distance_km"] = round(dist_km, 6)
-            backend_row["Distance_miles"] = round(dist_km * 0.621371, 6)
-            backend_row["Feasible"] = "Feasible" if dist_km <= float(cfg.get("feasible_km", DEFAULT_CONFIG["feasible_km"])) else "Not Feasible"
+            dists = vectorized_haversine(lat_val, lon_val, backend_lat_rad, backend_lon_rad)
+            j = find_nth_index(dists, n=int(nth))
+            if j is None:
+                empty_backend = {c: None for c in backend_filtered.columns}
+                empty_backend.update({"Distance_km": None, "Distance_miles": None, "Feasible": None})
+                backend_row = pd.Series(empty_backend)
+            else:
+                backend_row = backend_filtered.iloc[int(j)].copy()
+                dist_km = float(dists[j])
+                backend_row["Distance_km"] = round(dist_km, 6)
+                backend_row["Distance_miles"] = round(dist_km * 0.621371, 6)
+                backend_row["Feasible"] = "Feasible" if dist_km <= float(cfg.get("feasible_km", DEFAULT_CONFIG["feasible_km"])) else "Not Feasible"
 
-        # Merge input row and backend_row into one DataFrame row
-        merge_map = backend_column_merge_dict(backend_row, input_columns, conflict_suffix)
-        backend_row_renamed = backend_row.rename(index=merge_map).to_frame().T.reset_index(drop=True)
-        input_row_df = row.to_frame().T.reset_index(drop=True)
-        combined = pd.concat([input_row_df, backend_row_renamed], axis=1)
-        combined["Nth_used"] = int(nth)
-        results_frames.append(combined)
+            # Merge input row and backend_row into one DataFrame row
+            merge_map = backend_column_merge_dict(backend_row, input_columns, conflict_suffix)
+            backend_row_renamed = backend_row.rename(index=merge_map).to_frame().T.reset_index(drop=True)
+            input_row_df = row.to_frame().T.reset_index(drop=True)
+            combined = pd.concat([input_row_df, backend_row_renamed], axis=1)
+            combined["Nth_used"] = int(nth)
+            results_frames.append(combined)
 
-    # Final results
-    # final results
-    final = pd.concat(results_frames, ignore_index=True)
+        # Final results DataFrame
+        final = pd.concat(results_frames, ignore_index=True)
 
-# Store in session_state so it persists across reruns (prevents NameError)
-    st.session_state["final"] = final
+        # Normalize types & rounding
+        if "Distance_km" in final.columns:
+            final["Distance_km"] = pd.to_numeric(final["Distance_km"], errors="coerce").round(3)
+        if "Distance_miles" in final.columns:
+            final["Distance_miles"] = pd.to_numeric(final["Distance_miles"], errors="coerce").round(3)
 
+        # Save to session_state for later safe use
+        st.session_state["final"] = final
 
-    # Reorder columns
-    input_cols = list(user_df_fixed.columns)
-    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-    # Use final from session_state if it exists
-    if "final" in st.session_state:
+        st.success("Matching completed.")
+        # show immediate preview (single preview only)
+        st.subheader("Results (first 200 rows)")
+        st.dataframe(final.head(200), width='stretch')
+
+    # ---------------------------------------
+    # After matching: safe preview + Excel export
+    # ---------------------------------------
+    # Use the results only if they exist in session_state
+    if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state["final"]
 
-    input_cols = list(user_df.columns)
-    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-else:
-    final = None
-   # all_cols = input_cols + calc_cols + backend_cols
-    # ✅ Use final from session_state safely
-if "final" in st.session_state and st.session_state["final"] is not None:
-    final = st.session_state["final"]
-
-    # Rebuild column lists
-    input_cols = list(user_df.columns)
-    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-
-    all_cols = input_cols + calc_cols + backend_cols
-
-    # Preview results with super headers (if needed)
-    st.dataframe(final.head(200), width='stretch')
-
-    # Excel export code goes here (the full block I shared in last message)
-else:
-    st.info("Run matching first to generate results.")
-
-
-    #st.success("Matching completed.")
-    #st.subheader("Results (first 200 rows)")
-    #st.dataframe(final.head(200), width='stretch')
-import io
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-
-st.success("Matching completed.")
-st.subheader("Results (first 200 rows)")
-
-# --- Define column groups ---
-input_cols = list(user_df.columns)
-calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-# Use final from session_state if it exists
-if "final" in st.session_state:
-    final = st.session_state["final"]
-
-    input_cols = list(user_df.columns)
-    calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-    backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-else:
-    final = None
-
-#all_cols = input_cols + calc_cols + backend_cols
-
-# --- Create MultiIndex for Streamlit preview (superheaders) ---
-display_cols = []
-for c in all_cols:
-    if c in input_cols:
-        display_cols.append(("Input Data", c))
-    elif c in calc_cols:
-        display_cols.append(("Calculated Columns", c))
-    else:
-        display_cols.append(("Backend Data", c))
-
-final_display = final.copy()
-final_display = final_display[all_cols]  # enforce order
-final_display.columns = pd.MultiIndex.from_tuples(display_cols)
-
-# Streamlit preview with superheaders
-if final is not None:
-    st.dataframe(final.head(200), width='stretch')  # Streamlit 1.26+ change
-
-
-# --- Excel export with grouped headers ---
-import io
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
-
-if final is not None:
-    excel_buffer = io.BytesIO()
-
-    # --- Create Excel writer and sheet ---
-    with pd.ExcelWriter(excel_buffer, engine="openpyxl") as writer:
-        # Flatten multi-index columns if exist
-        flat_df = final.copy()
-        if isinstance(flat_df.columns, pd.MultiIndex):
-            flat_df.columns = ['_'.join(map(str, col)).strip() for col in flat_df.columns]
-
-        # Write raw values starting row=3 (reserve rows 1-2 for grouped headers)
-        ws = writer.book.create_sheet("Results") if "Results" not in writer.book.sheetnames else writer.sheets["Results"]
-        for r_idx, row in enumerate(flat_df.itertuples(index=False), start=4):
-            for c_idx, value in enumerate(row, start=1):
-                ws.cell(row=r_idx, column=c_idx, value=value)
-
-        # --- Define column groups ---
-        input_cols = list(user_df.columns)
+        # Build consistent column groups
+        input_cols = list(user_df.columns)                 # original input order
         calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-        backend_cols = [c for c in flat_df.columns if c not in input_cols + calc_cols]
+        # ensure calc columns are present in final (if not present they will be skipped)
+        calc_cols = [c for c in calc_cols if c in final.columns]
+        backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 
-        col_groups = [
+        # Define final display order (input -> calculated -> backend)
+        new_order = input_cols + calc_cols + backend_cols
+        # Only keep columns that do actually exist (defensive)
+        new_order = [c for c in new_order if c in final.columns]
+        final = final.reindex(columns=new_order)
+
+        # Single preview (already shown after run if run just now) — show again defensively
+        st.subheader("Results (first 200 rows) — ordered")
+        st.dataframe(final.head(200), width='stretch')
+
+        # ---------- Build Excel with grouped headers ----------
+        # We'll write Excel manually using openpyxl (so we can merge header cells)
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font, PatternFill
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Results"
+
+        # Row 1: super-headers (merged across groups)
+        col_idx = 1
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill("solid", fgColor="4F81BD")
+        subheader_fill = PatternFill("solid", fgColor="D9E1F2")
+        center = Alignment(horizontal="center", vertical="center")
+
+        groups = [
             ("Input Data", input_cols),
-            ("Calculated Columns", calc_cols),
+            ("Calculated", calc_cols),
             ("Backend Data", backend_cols),
         ]
 
-        # --- Write grouped headers ---
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill("solid", fgColor="4F81BD")
-        align_center = Alignment(horizontal="center", vertical="center")
+        # Write superheaders (row 1) and subheaders (row 2)
+        for group_name, cols in groups:
+            if not cols:
+                continue
+            start_col = col_idx
+            end_col = col_idx + len(cols) - 1
 
-        current_col = 1
-        for group_name, segment_cols in col_groups:
-            start_col = current_col
-            end_col = current_col + len(segment_cols) - 1
-            ws.merge_cells(start_row=2, start_column=start_col, end_row=2, end_column=end_col)
-            ws.cell(row=2, column=start_col, value=group_name).font = header_font
-            ws.cell(row=2, column=start_col, value=group_name).alignment = align_center
-            ws.cell(row=2, column=start_col, value=group_name).fill = header_fill
+            # Merge the superheader cells across the group's width
+            if start_col <= end_col:
+                ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+                cell = ws.cell(row=1, column=start_col, value=group_name)
+                cell.font = header_font
+                cell.alignment = center
+                cell.fill = header_fill
 
-            # Write subheaders (row 3)
-            for i, col in enumerate(segment_cols):
-                cell = ws.cell(row=3, column=start_col + i, value=col)
-                cell.font = Font(bold=True)
-                cell.alignment = Alignment(horizontal="center", vertical="center")
-                cell.fill = PatternFill("solid", fgColor="D9E1F2")
-            current_col += len(segment_cols)
+            # Write subheaders (row 2)
+            for i, col in enumerate(cols):
+                c = ws.cell(row=2, column=start_col + i, value=str(col))
+                c.font = Font(bold=True)
+                c.alignment = center
+                c.fill = subheader_fill
 
-    # ✅ Download button
-    st.download_button(
-        "Download results Excel",
-        data=excel_buffer.getvalue(),
-        file_name="nearest_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+            col_idx = end_col + 1
 
+        # Write data starting at row 3
+        for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
+            for c_idx, value in enumerate(row, start=1):
+                ws.cell(row=r_idx, column=c_idx, value=value)
+
+        # Adjust column widths a bit (optional)
+        for i, col in enumerate(final.columns, start=1):
+            letter = get_column_letter(i)
+            ws.column_dimensions[letter].width = min(max(8, len(str(col)) + 2), 40)
+
+        # Save workbook to bytes
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
+
+        # Download button
+        st.download_button(
+            "Download results (Excel with grouped headers)",
+            data=excel_buffer.getvalue(),
+            file_name="nearest_results.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+
+    else:
+        # no results yet
+        st.info("Run matching to see results and download Excel.")
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
