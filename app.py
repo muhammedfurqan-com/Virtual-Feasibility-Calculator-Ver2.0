@@ -514,8 +514,10 @@ elif page == "App":
     # Use the results only if they exist in session_state
     if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state["final"]
+            
 # --- Build consistent column groups (updated & robust) ---
 # input columns (original order from user's input)
+if "final" in locals() and isinstance(final, pd.DataFrame):
 input_cols = list(user_df.columns)
 
 # Try to detect "Site Code" and "Site Name" in final (case-insensitive and tolerant of suffixes)
