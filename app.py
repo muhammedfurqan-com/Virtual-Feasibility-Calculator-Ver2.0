@@ -583,12 +583,12 @@ for group_name, cols in groups:
         end_col = col_idx + len(cols) - 1
 
             # Merge the superheader cells across the group's width
-if start_col <= end_col:
-ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
-cell = ws.cell(row=1, column=start_col, value=group_name)
-cell.font = header_font
-cell.alignment = center
-cell.fill = header_fill
+        if start_col <= end_col:
+        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+        cell = ws.cell(row=1, column=start_col, value=group_name)
+        cell.font = header_font
+        cell.alignment = center
+        cell.fill = header_fill
 
             # Write subheaders (row 2)
         for i, col in enumerate(cols):
