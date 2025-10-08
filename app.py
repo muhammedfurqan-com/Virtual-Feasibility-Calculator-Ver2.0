@@ -602,7 +602,7 @@ for i, col in enumerate(cols):
         # Write data starting at row 3
 for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
         for c_idx, value in enumerate(row, start=1):
-        ws.cell(row=r_idx, column=c_idx, value=value)
+                ws.cell(row=r_idx, column=c_idx, value=value)
 
         # Adjust column widths a bit (optional)
 for i, col in enumerate(final.columns, start=1):
