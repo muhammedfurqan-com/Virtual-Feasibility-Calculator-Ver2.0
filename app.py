@@ -289,7 +289,7 @@ elif page == "App":
       #  st.write(f"✅ Loaded {len(backend_df)} backend rows.")   
     # Show backend summary
 
-    st.write(f"**serving Sites:** {len(backend_df)}")
+    st.write(f"**Serving Sites:** {len(backend_df)}")
 
     # persist user input in session
     if "user_df" not in st.session_state:
@@ -416,7 +416,7 @@ elif page == "App":
 
     st.write(f"Serving Sites after filters: {len(backend_filtered)}")
     if backend_filtered.empty:
-        st.error("No Serving Sites left after filters.")
+        st.error("No Serving Site left after filters.")
         st.stop()
 
     # Prepare backend coords for fast distance calc
