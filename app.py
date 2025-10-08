@@ -515,38 +515,41 @@ elif page == "App":
     if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state["final"]
 
-        # --- Build consistent column groups (updated) ---
+# --- Build consistent column groups (updated safe version) ---
 
-input_cols = list(user_df.columns)  # original input order
+if 'final' in locals() and isinstance(final, pd.DataFrame):
+    input_cols = list(user_df.columns)  # original input order
 
-# First, define which backend columns represent site info
-site_cols = [c for c in ["Site Code", "Site Name"] if c in final.columns]
+    # First, define which backend columns represent site info
+    site_cols = [c for c in ["Site Code", "Site Name"] if c in final.columns]
 
-# Then define the calculated group
-calc_cols = site_cols + ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-calc_cols = [c for c in calc_cols if c in final.columns]
+    # Then define the calculated group
+    calc_cols = site_cols + ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+    calc_cols = [c for c in calc_cols if c in final.columns]
 
-# Everything else from backend (excluding what we already took)
-backend_cols = [
-    c for c in final.columns
-    if c not in input_cols + calc_cols
-]
+    # Everything else from backend (excluding what we already took)
+    backend_cols = [
+        c for c in final.columns
+        if c not in input_cols + calc_cols
+    ]
 
-# Final order = input → calculated (with site info) → backend
-new_order = input_cols + calc_cols + backend_cols
-final = final.reindex(columns=[c for c in new_order if c in final.columns])
+    # Final order = input → calculated (with site info) → backend
+    new_order = input_cols + calc_cols + backend_cols
+    final = final.reindex(columns=[c for c in new_order if c in final.columns])
 
-# --- Grouped preview display in Streamlit (like Excel grouping) ---
-from itertools import chain
-group_labels = list(chain(
-    ["🟦 Input Data"] * len(input_cols),
-    ["🟨 Calculated"] * len(calc_cols),
-    ["🟩 Backend Data"] * len(backend_cols)
-))
-preview_df = final.head(200).copy()
-preview_df.columns = pd.MultiIndex.from_arrays([group_labels, preview_df.columns])
-st.subheader("Results (first 200 rows) — grouped preview")
-st.dataframe(preview_df, width='stretch')
+    # --- Grouped preview display in Streamlit (like Excel grouping) ---
+    from itertools import chain
+    group_labels = list(chain(
+        ["🟦 Input Data"] * len(input_cols),
+        ["🟨 Calculated"] * len(calc_cols),
+        ["🟩 Backend Data"] * len(backend_cols)
+    ))
+    preview_df = final.head(200).copy()
+    preview_df.columns = pd.MultiIndex.from_arrays([group_labels, preview_df.columns])
+    st.subheader("Results (first 200 rows) — grouped preview")
+    st.dataframe(preview_df, width='stretch')
+else:
+    st.error("❌ 'final' DataFrame not found — please check where this block is placed.")
 
 
         # Single preview (already shown after run if run just now) — show again defensively
