@@ -515,22 +515,43 @@ elif page == "App":
     if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state["final"]
 
-        # Build consistent column groups
-        input_cols = list(user_df.columns)                 # original input order
-        calc_cols = ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-        # ensure calc columns are present in final (if not present they will be skipped)
-        calc_cols = [c for c in calc_cols if c in final.columns]
-        backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
+        # --- Build consistent column groups (updated) ---
 
-        # Define final display order (input -> calculated -> backend)
-        new_order = input_cols + calc_cols + backend_cols
-        # Only keep columns that do actually exist (defensive)
-        new_order = [c for c in new_order if c in final.columns]
-        final = final.reindex(columns=new_order)
+input_cols = list(user_df.columns)  # original input order
+
+# First, define which backend columns represent site info
+site_cols = [c for c in ["Site Code", "Site Name"] if c in final.columns]
+
+# Then define the calculated group
+calc_cols = site_cols + ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+calc_cols = [c for c in calc_cols if c in final.columns]
+
+# Everything else from backend (excluding what we already took)
+backend_cols = [
+    c for c in final.columns
+    if c not in input_cols + calc_cols
+]
+
+# Final order = input → calculated (with site info) → backend
+new_order = input_cols + calc_cols + backend_cols
+final = final.reindex(columns=[c for c in new_order if c in final.columns])
+
+# --- Grouped preview display in Streamlit (like Excel grouping) ---
+from itertools import chain
+group_labels = list(chain(
+    ["🟦 Input Data"] * len(input_cols),
+    ["🟨 Calculated"] * len(calc_cols),
+    ["🟩 Backend Data"] * len(backend_cols)
+))
+preview_df = final.head(200).copy()
+preview_df.columns = pd.MultiIndex.from_arrays([group_labels, preview_df.columns])
+st.subheader("Results (first 200 rows) — grouped preview")
+st.dataframe(preview_df, width='stretch')
+
 
         # Single preview (already shown after run if run just now) — show again defensively
-        st.subheader("Results (first 200 rows) — ordered")
-        st.dataframe(final.head(200), width='stretch')
+       # st.subheader("Results (first 200 rows) — ordered")
+        #st.dataframe(final.head(200), width='stretch')
 
         # ---------- Build Excel with grouped headers ----------
         # We'll write Excel manually using openpyxl (so we can merge header cells)
