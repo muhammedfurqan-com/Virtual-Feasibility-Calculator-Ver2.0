@@ -520,8 +520,9 @@ elif page == "App":
             
 # --- Build consistent column groups (updated & robust) ---
 # input columns (original order from user's input)
-    if "final" in locals() and isinstance(final, pd.DataFrame) and 'input_cols' in locals():
-    else:
+if "final" in locals() and isinstance(final, pd.DataFrame) and 'input_cols' in locals():
+    
+else:
     st.empty()
         input_cols = list(user_df.columns)
         
