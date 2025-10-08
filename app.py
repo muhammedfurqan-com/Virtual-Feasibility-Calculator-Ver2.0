@@ -514,6 +514,9 @@ elif page == "App":
     # Use the results only if they exist in session_state
     if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state["final"]
+               # (everything for preview + Excel export stays here)
+    else:
+            st.empty()  # keeps layout clean, no red error box
             
 # --- Build consistent column groups (updated & robust) ---
 # input columns (original order from user's input)
