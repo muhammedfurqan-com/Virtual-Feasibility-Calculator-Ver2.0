@@ -522,7 +522,9 @@ elif page == "App":
 # input columns (original order from user's input)
 if "final" in locals() and isinstance(final, pd.DataFrame) and 'input_cols' in locals():
         input_cols = list(user_df.columns)
-        
+else:
+        st.empty()
+
         # Try to detect "Site Code" and "Site Name" in final (case-insensitive and tolerant of suffixes)
         site_code_col = next((c for c in final.columns if "site" in c.lower() and "code" in c.lower()), None)
         site_name_col = next((c for c in final.columns if "site" in c.lower() and "name" in c.lower()), None)
