@@ -621,8 +621,8 @@ st.download_button(
         file_name="nearest_results.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-    else:
+#    else:
         # no results yet
-        st.info("Run matching to see results and download Excel.")
+ #       st.info("Run matching to see results and download Excel.")
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
