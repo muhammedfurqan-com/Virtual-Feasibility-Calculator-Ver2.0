@@ -515,7 +515,7 @@ elif page == "App":
     if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state_state.get["final"]
                # (everything for preview + Excel export stays here)
-    else:
+            else:
             st.empty()  # keeps layout clean, no red error box
             
 # --- Build consistent column groups (updated & robust) ---
