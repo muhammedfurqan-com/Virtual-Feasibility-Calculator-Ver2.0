@@ -514,42 +514,36 @@ elif page == "App":
     # Use the results only if they exist in session_state
     if "final" in st.session_state and st.session_state["final"] is not None:
         final = st.session_state["final"]
+# --- Build consistent column groups (updated & robust) ---
+# input columns (original order from user's input)
+input_cols = list(user_df.columns)
 
-# --- Build consistent column groups (updated safe version) ---
+# Try to detect "Site Code" and "Site Name" in final (case-insensitive and tolerant of suffixes)
+site_code_col = next((c for c in final.columns if "site" in c.lower() and "code" in c.lower()), None)
+site_name_col = next((c for c in final.columns if "site" in c.lower() and "name" in c.lower()), None)
+site_cols = [c for c in (site_code_col, site_name_col) if c is not None]
 
-if 'final' in locals() and isinstance(final, pd.DataFrame):
-    input_cols = list(user_df.columns)  # original input order
+# Calculated group: place site_cols first (if present), then distances / feasible / nth
+calc_cols = site_cols + ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
+calc_cols = [c for c in calc_cols if c in final.columns]
 
-    # First, define which backend columns represent site info
-    site_cols = [c for c in ["Site Code", "Site Name"] if c in final.columns]
+# Backend columns are everything else (exclude input & calculated)
+backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
 
-    # Then define the calculated group
-    calc_cols = site_cols + ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
-    calc_cols = [c for c in calc_cols if c in final.columns]
+# Final display order: input -> calculated (with site info) -> backend
+new_order = input_cols + calc_cols + backend_cols
+final = final.reindex(columns=[c for c in new_order if c in final.columns])
 
-    # Everything else from backend (excluding what we already took)
-    backend_cols = [
-        c for c in final.columns
-        if c not in input_cols + calc_cols
-    ]
+# --- Grouped preview display in Streamlit (like Excel grouping) ---
+# Build simple group labels (no extra imports required)
+group_labels = (["Input Data"] * len(input_cols)) + (["Calculated"] * len(calc_cols)) + (["Backend Data"] * len(backend_cols))
 
-    # Final order = input → calculated (with site info) → backend
-    new_order = input_cols + calc_cols + backend_cols
-    final = final.reindex(columns=[c for c in new_order if c in final.columns])
+preview_df = final.head(200).copy()
+# Use a MultiIndex for the columns so Streamlit shows the two-level header
+preview_df.columns = pd.MultiIndex.from_arrays([group_labels, preview_df.columns])
 
-    # --- Grouped preview display in Streamlit (like Excel grouping) ---
-    from itertools import chain
-    group_labels = list(chain(
-        ["🟦 Input Data"] * len(input_cols),
-        ["🟨 Calculated"] * len(calc_cols),
-        ["🟩 Backend Data"] * len(backend_cols)
-    ))
-    preview_df = final.head(200).copy()
-    preview_df.columns = pd.MultiIndex.from_arrays([group_labels, preview_df.columns])
-    st.subheader("Results (first 200 rows) — grouped preview")
-    st.dataframe(preview_df, width='stretch')
-else:
-    st.error("❌ 'final' DataFrame not found — please check where this block is placed.")
+st.subheader("Results (first 200 rows) — grouped preview")
+st.dataframe(preview_df, width='stretch')
 
 
         # Single preview (already shown after run if run just now) — show again defensively
