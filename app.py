@@ -505,8 +505,8 @@ elif page == "App":
 
         st.success("Matching completed.")
         # show immediate preview (single preview only)
-        st.subheader("Results (first 200 rows)")
-        st.dataframe(final.head(200), width='stretch')
+        #st.subheader("Results (first 200 rows)")
+       # st.dataframe(final.head(200), width='stretch')
 
     # ---------------------------------------
     # After matching: safe preview + Excel export
