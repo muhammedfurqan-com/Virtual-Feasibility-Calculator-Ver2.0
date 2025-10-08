@@ -289,7 +289,7 @@ elif page == "App":
       #  st.write(f"✅ Loaded {len(backend_df)} backend rows.")   
     # Show backend summary
 
-    st.write(f"**Backend rows:** {len(backend_df)}")
+    st.write(f"**serving Sites:** {len(backend_df)}")
 
     # persist user input in session
     if "user_df" not in st.session_state:
@@ -414,9 +414,9 @@ elif page == "App":
         for k,v in active_filters.items():
             st.write(f"- **{k}**: {', '.join(v)}")
 
-    st.write(f"Backend rows after filters: {len(backend_filtered)}")
+    st.write(f"Serving Sites after filters: {len(backend_filtered)}")
     if backend_filtered.empty:
-        st.error("No backend rows left after filters.")
+        st.error("No Serving Sites left after filters.")
         st.stop()
 
     # Prepare backend coords for fast distance calc
@@ -496,9 +496,9 @@ elif page == "App":
 
         # Normalize types & rounding
         if "Distance_km" in final.columns:
-            final["Distance_km"] = pd.to_numeric(final["Distance_km"], errors="coerce").round(3)
+            final["Distance_km"] = pd.to_numeric(final["Distance_km"], errors="coerce").round(2)
         if "Distance_miles" in final.columns:
-            final["Distance_miles"] = pd.to_numeric(final["Distance_miles"], errors="coerce").round(3)
+            final["Distance_miles"] = pd.to_numeric(final["Distance_miles"], errors="coerce").round(2)
 
         # Save to session_state for later safe use
         st.session_state["final"] = final
@@ -513,7 +513,7 @@ elif page == "App":
     # ---------------------------------------
     # Use the results only if they exist in session_state
     if "final" in st.session_state and st.session_state["final"] is not None:
-        final = st.session_state_state.get["final"]
+        final = st.session_state["final"]
                # (everything for preview + Excel export stays here)
     else:
         st.empty()  # keeps layout clean, no red error box
