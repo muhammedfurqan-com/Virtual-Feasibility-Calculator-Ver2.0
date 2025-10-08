@@ -555,22 +555,21 @@ st.dataframe(preview_df, width='stretch')
 
         # ---------- Build Excel with grouped headers ----------
         # We'll write Excel manually using openpyxl (so we can merge header cells)
-        import io
-        from openpyxl import Workbook
-        from openpyxl.styles import Alignment, Font, PatternFill
-
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Results"
+import io
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font, PatternFill
+wb = Workbook()
+ws = wb.active
+ws.title = "Results"
 
         # Row 1: super-headers (merged across groups)
-        col_idx = 1
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill("solid", fgColor="4F81BD")
-        subheader_fill = PatternFill("solid", fgColor="D9E1F2")
-        center = Alignment(horizontal="center", vertical="center")
+col_idx = 1
+header_font = Font(bold=True, color="FFFFFF")
+header_fill = PatternFill("solid", fgColor="4F81BD")
+subheader_fill = PatternFill("solid", fgColor="D9E1F2")
+center = Alignment(horizontal="center", vertical="center")
 
-        groups = [
+groups = [
             ("Input Data", input_cols),
             ("Calculated", calc_cols),
             ("Backend Data", backend_cols),
