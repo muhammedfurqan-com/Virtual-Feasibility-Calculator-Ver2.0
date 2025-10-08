@@ -520,7 +520,9 @@ elif page == "App":
             
 # --- Build consistent column groups (updated & robust) ---
 # input columns (original order from user's input)
-    if "final" in locals() and isinstance(final, pd.DataFrame):
+    if "final" in locals() and isinstance(final, pd.DataFrame) and 'input_cols' in locals():
+          else:
+    st.empty()
         input_cols = list(user_df.columns)
         
         # Try to detect "Site Code" and "Site Name" in final (case-insensitive and tolerant of suffixes)
