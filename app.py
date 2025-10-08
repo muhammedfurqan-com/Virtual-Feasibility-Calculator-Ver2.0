@@ -518,118 +518,102 @@ elif page == "App":
     else:
         st.empty()  # keeps layout clean, no red error box
             
-# --- Build consistent column groups (updated & robust) ---
-# input columns (original order from user's input)
-if "final" in locals() and isinstance(final, pd.DataFrame) and 'input_cols' in locals():
+    # --- Build consistent column groups (updated & robust) ---
+    if "final" in st.session_state and isinstance(st.session_state["final"], pd.DataFrame):
+        final = st.session_state["final"]
         input_cols = list(user_df.columns)
-#else:
- #       st.empty()
 
-        # Try to detect "Site Code" and "Site Name" in final (case-insensitive and tolerant of suffixes)
+        # Detect site columns
         site_code_col = next((c for c in final.columns if "site" in c.lower() and "code" in c.lower()), None)
         site_name_col = next((c for c in final.columns if "site" in c.lower() and "name" in c.lower()), None)
         site_cols = [c for c in (site_code_col, site_name_col) if c is not None]
-        
-        # Calculated group: place site_cols first (if present), then distances / feasible / nth
+
+        # Calculated columns
         calc_cols = site_cols + ["Distance_km", "Distance_miles", "Feasible", "Nth_used"]
         calc_cols = [c for c in calc_cols if c in final.columns]
-        
-        # Backend columns are everything else (exclude input & calculated)
+
+        # Backend columns
         backend_cols = [c for c in final.columns if c not in input_cols + calc_cols]
-        
-        # Final display order: input -> calculated (with site info) -> backend
+
+        # Reorder columns for display
         new_order = input_cols + calc_cols + backend_cols
         final = final.reindex(columns=[c for c in new_order if c in final.columns])
-        
-        # --- Grouped preview display in Streamlit (like Excel grouping) ---
-        # Build simple group labels (no extra imports required)
-        group_labels = (["Input Data"] * len(input_cols)) + (["Calculated"] * len(calc_cols)) + (["Backend Data"] * len(backend_cols))
-        
+
+        # --- Grouped preview in Streamlit ---
+        group_labels = (
+            ["Input Data"] * len(input_cols)
+            + ["Calculated"] * len(calc_cols)
+            + ["Backend Data"] * len(backend_cols)
+        )
         preview_df = final.head(200).copy()
-        # Use a MultiIndex for the columns so Streamlit shows the two-level header
         preview_df.columns = pd.MultiIndex.from_arrays([group_labels, preview_df.columns])
-        
+
         st.subheader("Results (first 200 rows) — grouped preview")
         st.dataframe(preview_df, width='stretch')
 
+        # --- Build Excel with grouped headers ---
+        import io
+        from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font, PatternFill
+        from openpyxl.utils import get_column_letter
 
-        # Single preview (already shown after run if run just now) — show again defensively
-       # st.subheader("Results (first 200 rows) — ordered")
-        #st.dataframe(final.head(200), width='stretch')
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Results"
 
-        # ---------- Build Excel with grouped headers ----------
-        # We'll write Excel manually using openpyxl (so we can merge header cells)
-import io
-from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font, PatternFill
+        # Header styles
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill("solid", fgColor="4F81BD")
+        subheader_fill = PatternFill("solid", fgColor="D9E1F2")
+        center = Alignment(horizontal="center", vertical="center")
 
-wb = Workbook()
-ws = wb.active
-ws.title = "Results"
+        col_idx = 1
+        groups = [
+            ("Input Data", input_cols),
+            ("Calculated", calc_cols),
+            ("Backend Data", backend_cols),
+        ]
 
-# --- Header formatting ---
-col_idx = 1
-header_font = Font(bold=True, color="FFFFFF")
-header_fill = PatternFill("solid", fgColor="4F81BD")
-subheader_fill = PatternFill("solid", fgColor="D9E1F2")
-center = Alignment(horizontal="center", vertical="center")
+        for group_name, cols in groups:
+            if not cols:
+                continue
+            start_col = col_idx
+            end_col = col_idx + len(cols) - 1
 
-groups = [
-    ("Input Data", input_cols),
-    ("Calculated", calc_cols),
-    ("Backend Data", backend_cols),
-]
+            ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
+            cell = ws.cell(row=1, column=start_col, value=group_name)
+            cell.font = header_font
+            cell.alignment = center
+            cell.fill = header_fill
 
-# --- Write superheaders (row 1) and subheaders (row 2) ---
-for group_name, cols in groups:
-    if not cols:
-        continue
+            for i, col in enumerate(cols):
+                c = ws.cell(row=2, column=start_col + i, value=str(col))
+                c.font = Font(bold=True)
+                c.alignment = center
+                c.fill = subheader_fill
 
-    start_col = col_idx
-    end_col = col_idx + len(cols) - 1
+            col_idx = end_col + 1
 
-    # Merge the superheader cells across the group's width
-    if start_col <= end_col:
-        ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
-        cell = ws.cell(row=1, column=start_col, value=group_name)
-        cell.font = header_font
-        cell.alignment = center
-        cell.fill = header_fill
-
-        # Write subheaders (row 2)
-        for i, col in enumerate(cols):
-            c = ws.cell(row=2, column=start_col + i, value=str(col))
-            c.font = Font(bold=True)
-            c.alignment = center
-            c.fill = subheader_fill
-
-    col_idx = end_col + 1
-
-
-        # Write data starting at row 3
-for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
-        for c_idx, value in enumerate(row, start=1):
+        # Write data
+        for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
+            for c_idx, value in enumerate(row, start=1):
                 ws.cell(row=r_idx, column=c_idx, value=value)
 
-        # Adjust column widths a bit (optional)
-for i, col in enumerate(final.columns, start=1):
-        letter = get_column_letter(i)
-        ws.column_dimensions[letter].width = min(max(8, len(str(col)) + 2), 40)
+        # Adjust widths
+        for i, col in enumerate(final.columns, start=1):
+            letter = get_column_letter(i)
+            ws.column_dimensions[letter].width = min(max(8, len(str(col)) + 2), 40)
 
-        # Save workbook to bytes
-excel_buffer = io.BytesIO()
-wb.save(excel_buffer)
-excel_buffer.seek(0)
+        excel_buffer = io.BytesIO()
+        wb.save(excel_buffer)
+        excel_buffer.seek(0)
 
-        # Download button
-st.download_button(
-        "Download results (Excel with grouped headers)",
-        data=excel_buffer.getvalue(),
-        file_name="nearest_results.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        st.download_button(
+            "Download results (Excel with grouped headers)",
+            data=excel_buffer.getvalue(),
+            file_name="nearest_results.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-#    else:
-        # no results yet
  #       st.info("Run matching to see results and download Excel.")
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
         #st.download_button("Download results CSV", data=csv_bytes, file_name="nearest_results.csv", mime="text/csv")
