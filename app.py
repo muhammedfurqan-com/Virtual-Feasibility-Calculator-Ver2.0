@@ -583,7 +583,7 @@ for group_name, cols in groups:
         end_col = col_idx + len(cols) - 1
 
             # Merge the superheader cells across the group's width
-        if start_col <= end_col:
+    if start_col <= end_col:
         ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
         cell = ws.cell(row=1, column=start_col, value=group_name)
         cell.font = header_font
@@ -591,7 +591,7 @@ for group_name, cols in groups:
         cell.fill = header_fill
 
             # Write subheaders (row 2)
-        for i, col in enumerate(cols):
+for i, col in enumerate(cols):
         c = ws.cell(row=2, column=start_col + i, value=str(col))
         c.font = Font(bold=True)
         c.alignment = center
@@ -600,26 +600,26 @@ for group_name, cols in groups:
         col_idx = end_col + 1
 
         # Write data starting at row 3
-        for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
-            for c_idx, value in enumerate(row, start=1):
-                ws.cell(row=r_idx, column=c_idx, value=value)
+for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
+        for c_idx, value in enumerate(row, start=1):
+        ws.cell(row=r_idx, column=c_idx, value=value)
 
         # Adjust column widths a bit (optional)
-        for i, col in enumerate(final.columns, start=1):
-            letter = get_column_letter(i)
-            ws.column_dimensions[letter].width = min(max(8, len(str(col)) + 2), 40)
+for i, col in enumerate(final.columns, start=1):
+        letter = get_column_letter(i)
+        ws.column_dimensions[letter].width = min(max(8, len(str(col)) + 2), 40)
 
         # Save workbook to bytes
-        excel_buffer = io.BytesIO()
-        wb.save(excel_buffer)
-        excel_buffer.seek(0)
+excel_buffer = io.BytesIO()
+wb.save(excel_buffer)
+excel_buffer.seek(0)
 
         # Download button
-        st.download_button(
-            "Download results (Excel with grouped headers)",
-            data=excel_buffer.getvalue(),
-            file_name="nearest_results.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+st.download_button(
+        "Download results (Excel with grouped headers)",
+        data=excel_buffer.getvalue(),
+        file_name="nearest_results.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
     else:
