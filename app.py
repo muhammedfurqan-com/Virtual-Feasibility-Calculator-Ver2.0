@@ -572,11 +572,11 @@ header_fill = PatternFill("solid", fgColor="4F81BD")
 subheader_fill = PatternFill("solid", fgColor="D9E1F2")
 center = Alignment(horizontal="center", vertical="center")
 
-#groups = [
- #   ("Input Data", input_cols),
-  #  ("Calculated", calc_cols),
-   # ("Backend Data", backend_cols),
-#]
+groups = [
+    ("Input Data", input_cols),
+    ("Calculated", calc_cols),
+    ("Backend Data", backend_cols),
+]
 
 # --- Write superheaders (row 1) and subheaders (row 2) ---
 for group_name, cols in groups:
