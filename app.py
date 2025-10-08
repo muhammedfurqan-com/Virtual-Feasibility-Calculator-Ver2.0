@@ -557,11 +557,12 @@ if "final" in locals() and isinstance(final, pd.DataFrame):
 import io
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, PatternFill
+
 wb = Workbook()
 ws = wb.active
 ws.title = "Results"
 
-        # Row 1: super-headers (merged across groups)
+# --- Header formatting ---
 col_idx = 1
 header_font = Font(bold=True, color="FFFFFF")
 header_fill = PatternFill("solid", fgColor="4F81BD")
@@ -569,19 +570,20 @@ subheader_fill = PatternFill("solid", fgColor="D9E1F2")
 center = Alignment(horizontal="center", vertical="center")
 
 groups = [
-            ("Input Data", input_cols),
-            ("Calculated", calc_cols),
-            ("Backend Data", backend_cols),
-        ]
+    ("Input Data", input_cols),
+    ("Calculated", calc_cols),
+    ("Backend Data", backend_cols),
+]
 
-        # Write superheaders (row 1) and subheaders (row 2)
+# --- Write superheaders (row 1) and subheaders (row 2) ---
 for group_name, cols in groups:
     if not cols:
         continue
-        start_col = col_idx
-        end_col = col_idx + len(cols) - 1
 
-            # Merge the superheader cells across the group's width
+    start_col = col_idx
+    end_col = col_idx + len(cols) - 1
+
+    # Merge the superheader cells across the group's width
     if start_col <= end_col:
         ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=end_col)
         cell = ws.cell(row=1, column=start_col, value=group_name)
@@ -589,14 +591,15 @@ for group_name, cols in groups:
         cell.alignment = center
         cell.fill = header_fill
 
-            # Write subheaders (row 2)
-for i, col in enumerate(cols):
-        c = ws.cell(row=2, column=start_col + i, value=str(col))
-        c.font = Font(bold=True)
-        c.alignment = center
-        c.fill = subheader_fill
+        # Write subheaders (row 2)
+        for i, col in enumerate(cols):
+            c = ws.cell(row=2, column=start_col + i, value=str(col))
+            c.font = Font(bold=True)
+            c.alignment = center
+            c.fill = subheader_fill
 
-        col_idx = end_col + 1
+    col_idx = end_col + 1
+
 
         # Write data starting at row 3
 for r_idx, row in enumerate(final.itertuples(index=False, name=None), start=3):
