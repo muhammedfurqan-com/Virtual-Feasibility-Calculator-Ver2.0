@@ -642,7 +642,7 @@ elif page == "App":
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
 
-        if st.button("Logout", key="user_logout"):
+        if st.sidebar.button("Logout", key="user_logout"):
             st.session_state["user_authenticated"] = False
             st.info("🔒 Logged out successfully")
             st.rerun()
