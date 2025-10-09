@@ -282,6 +282,11 @@ elif page == "App":
         st.stop()
     else:
         st.success("✅ Welcome, User!")
+
+    if st.button("Logout", key="user_logout"):
+        st.session_state["user_authenticated"] = False
+        st.info("🔒 Logged out successfully")
+        st.rerun()       
             
         
         # Load backend (prefer session_state if admin uploaded one)
@@ -641,11 +646,6 @@ elif page == "App":
             file_name="nearest_results.xlsx",
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         )
-
-        if st.sidebar.button("Logout", key="user_logout"):
-            st.session_state["user_authenticated"] = False
-            st.info("🔒 Logged out successfully")
-            st.rerun()
 
  #       st.info("Run matching to see results and download Excel.")
         #csv_bytes = final.to_csv(index=False).encode("utf-8")
