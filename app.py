@@ -45,10 +45,31 @@ def admin_login():
             st.rerun()
         else:
             st.error("❌ Invalid username or password")
+# -------------------------
+# User login helper
+# -------------------------
+def user_login():
+    st.subheader("User Login")
+
+    username_input = st.sidebar.text_input("Username", key="user_username")
+    password_input = st.sidebar.text_input("Password", type="password", key="user_password")
+
+    if st.sidebar.button("Login", key="user_login_button"):
+        # Hardcoded credentials
+        if username_input == "user" and password_input == "5678":
+            st.session_state["user_authenticated"] = True
+            st.success("✅ Logged in as user")
+            st.rerun()
+        else:
+            st.error("❌ Invalid username or password")
+
 
 # Initialize session state
 if "admin_authenticated" not in st.session_state:
     st.session_state["admin_authenticated"] = False
+
+if "user_authenticated" not in st.session_state:
+    st.session_state["user_authenticated"] = False
 
 
 # -------------------------
@@ -255,6 +276,12 @@ if page == "Admin":
 # -------------------------
 elif page == "App":
     st.header("User — Upload or Paste input & find nearest backend site")
+        # Check user login status
+    if not st.session_state["user_authenticated"]:
+        user_login()
+        st.stop()
+    else:
+        st.success("✅ Welcome, User!")
             
         
         # Load backend (prefer session_state if admin uploaded one)
